@@ -1,0 +1,48 @@
+services:
+  tuwunel:
+    image: ghcr.io/matrix-construct/tuwunel:v1.9.4
+    container_name: tuwunel
+    restart: unless-stopped
+    user: "1000:1000"
+    # Allow up to 30m for graceful shutdown during RocksDB schema migrations on upgrade
+    stop_grace_period: 30m
+    # Recommended for RocksDB/Tokio thread pools under Docker
+    pids_limit: 16384
+    mem_limit: 512m
+    networks:
+      - proxy
+    ports:
+      # Bound to control's Core VLAN IP for jumpgate DMZ Traefik forwarding
+      - "10.1.0.10:8008:8008"
+    volumes:
+      # Local disk on control (/dev/sda1) — do NOT place live RocksDB on soft-mounted /srv NFS
+      - /var/lib/matrix/data:/var/lib/tuwunel
+    environment:
+      TUWUNEL_SERVER_NAME: "${TUWUNEL_SERVER_NAME:-matrix.evilcouncil.org}"
+      TUWUNEL_DATABASE_PATH: "/var/lib/tuwunel"
+      TUWUNEL_ADDRESS: "0.0.0.0"
+      TUWUNEL_PORT: "8008"
+      TUWUNEL_MAX_REQUEST_SIZE: "${TUWUNEL_MAX_REQUEST_SIZE:-20000000}"
+      TUWUNEL_ALLOW_FEDERATION: "${TUWUNEL_ALLOW_FEDERATION:-false}"
+      TUWUNEL_TRUSTED_SERVERS: "${TUWUNEL_TRUSTED_SERVERS:-[]}"
+      TUWUNEL_ALLOW_CHECK_FOR_UPDATES: "false"
+      TUWUNEL_ALLOW_REGISTRATION: "${TUWUNEL_ALLOW_REGISTRATION:-false}"
+      TUWUNEL_REGISTRATION_TOKEN: "${TUWUNEL_REGISTRATION_TOKEN:-}"
+      TUWUNEL_LOG: "${TUWUNEL_LOG:-info}"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.matrix.entrypoints=websecure"
+      - "traefik.http.routers.matrix.rule=Host(`matrix.evilcouncil.org`)"
+      - "traefik.http.routers.matrix.tls.certresolver=myresolver"
+      - "traefik.http.services.matrix.loadbalancer.server.port=8008"
+      - "wud.watch=true"
+      - "wud.filter.image=ghcr.io/matrix-construct/tuwunel"
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+networks:
+  proxy:
+    external: true
