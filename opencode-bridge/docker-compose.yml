@@ -1,0 +1,26 @@
+services:
+  opencode-matrix-bridge:
+    image: lbecchi/opencode-chat-bridge:latest
+    container_name: opencode-matrix-bridge
+    restart: unless-stopped
+    working_dir: /app
+    environment:
+      CONNECTOR: "matrix"
+      MATRIX_HOMESERVER: "${MATRIX_HOMESERVER:-https://matrix.evilcouncil.org}"
+      MATRIX_USER_ID: "${MATRIX_USER_ID:-@opencode:matrix.evilcouncil.org}"
+      MATRIX_PASSWORD: "${OPENCODE_MATRIX_PASSWORD:?OPENCODE_MATRIX_PASSWORD is required}"
+      MATRIX_TRIGGER: "${MATRIX_TRIGGER:-!oc}"
+      MATRIX_ALLOWED_USERS: "${MATRIX_ALLOWED_USERS:-@jubei:matrix.evilcouncil.org,@antigravity:matrix.evilcouncil.org,@hermes:matrix.evilcouncil.org}"
+      MATRIX_STORAGE_PATH: "/data/matrix-storage"
+      SESSION_BASE_DIR: "/data/sessions"
+      SESSION_RETENTION_DAYS: "${SESSION_RETENTION_DAYS:-14}"
+    volumes:
+      - /srv/opencode:/workspace:z
+      - /srv/opencode-homedir/.config/opencode:/root/.config/opencode:ro,z
+      - /srv/opencode-matrix-bridge/data:/data:z
+      - /srv/opencode-matrix-bridge/opencode-bin:/root/.opencode:z
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
