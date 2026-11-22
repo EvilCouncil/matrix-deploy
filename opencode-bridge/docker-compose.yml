@@ -17,6 +17,7 @@ services:
     volumes:
       - /srv/opencode:/workspace:z
       - /srv/opencode-homedir/.config/opencode:/root/.config/opencode:ro,z
+      - /srv/opencode-matrix-bridge/chat-bridge.json:/app/chat-bridge.json:ro,z
       - /srv/opencode-matrix-bridge/data:/data:z
       - /srv/opencode-matrix-bridge/opencode-bin:/root/.opencode:z
     logging:
